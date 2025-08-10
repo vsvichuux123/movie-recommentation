@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
@@ -22,14 +23,14 @@ count_matrix = count.fit_transform(df['genres'])
 cosine_sim = cosine_similarity(count_matrix, count_matrix)
 
 def get_recommendations(title):
-    title = title.strip().lower()  # normalize input to lowercase
+    title = title.strip().lower()
     titles_lower = [t.lower() for t in df['title']]
     if title not in titles_lower:
         return []
     idx = titles_lower.index(title)
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    sim_scores = sim_scores[1:4]  # top 3 similar movies excluding itself
+    sim_scores = sim_scores[1:4]
     movie_indices = [i[0] for i in sim_scores]
     return df['title'].iloc[movie_indices].tolist()
 
@@ -45,4 +46,6 @@ def recommend():
     return jsonify({'recommendations': recommendations})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
